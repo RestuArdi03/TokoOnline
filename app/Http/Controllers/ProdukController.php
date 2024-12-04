@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Produk;
 use App\Models\Kategori;
+use App\Models\FotoProduk;
 use App\Helpers\ImageHelper;
 
 class ProdukController extends Controller
@@ -89,7 +90,13 @@ class ProdukController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $produk = Produk::with('fotoProduk')->findOrFail($id);
+        $kategori = Kategori::orderBy('nama_kategori', 'asc')->get();
+        return view('backend.v_produk.show', [
+            'judul' => 'Detail Produk',
+            'show' => $produk,
+            'kategori' => $kategori
+        ]);
     }
 
     /**
@@ -115,4 +122,53 @@ class ProdukController extends Controller
     {
         //
     }
+
+    // Method untuk menyimpan foto tambahan
+    public function storeFoto(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'produk_id' => 'required|exists:produk,id',
+            'foto_produk.*' => 'image|mimes:jpeg,jpg,png,gif|file|max:1024',
+        ]);
+
+        if ($request->hasFile('foto_produk')) {
+            foreach ($request->file('foto_produk') as $file) {
+                // Buat nama file yang unik
+                $extension = $file->getClientOriginalExtension();
+                $filename = date('YmdHis') . '_' . uniqid() . '.' . $extension;
+                $directory = 'storage/img-produk/';
+
+                // Simpan dan resize gambar menggunakan ImageHelper
+                ImageHelper::uploadAndResize($file, $directory, $filename, 800, null);
+                // Simpan data ke database
+                FotoProduk::create([
+                    'produk_id' => $request->produk_id,
+                    'foto' => $filename,
+                ]);
+            }
+        }
+        return redirect()->route('backend.produk.show', $request->produk_id)
+            ->with('success', 'Foto berhasil ditambahkan.');
+    }
+
+
+    // Method untuk menghapus foto
+    public function destroyFoto($id)
+    {
+        $foto = FotoProduk::findOrFail($id);
+        $produkId = $foto->produk_id;
+
+        // Hapus file gambar dari storage
+        $imagePath = public_path('storage/img-produk/') . $foto->foto;
+        if (file_exists($imagePath)) {
+            unlink($imagePath);
+        }
+        // Hapus record dari database
+        $foto->delete();
+
+        return redirect()->route('backend.produk.show', $produkId)
+            ->with('success', 'Foto berhasil dihapus.');
+    }
+
 }
