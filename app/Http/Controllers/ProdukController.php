@@ -189,10 +189,52 @@ class ProdukController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $produk = Produk::findOrFail($id);
+        $directory = public_path('storage/img-produk/');
+
+        if ($produk->foto) {
+            // Hapus gambar asli
+            $oldImagePath = $directory . $produk->foto;
+            if (file_exists($oldImagePath)) {
+                unlink($oldImagePath);
+            }
+
+            // Hapus thumbnail lg
+            $thumbnailLg = $directory . 'thumb_lg_' . $produk->foto;
+            if (file_exists($thumbnailLg)) {
+                unlink($thumbnailLg);
+            }
+
+            // Hapus thumbnail md
+            $thumbnailMd = $directory . 'thumb_md_' . $produk->foto;
+            if (file_exists($thumbnailMd)) {
+                unlink($thumbnailMd);
+            }
+
+            // Hapus thumbnail sm
+            $thumbnailSm = $directory . 'thumb_sm_' . $produk->foto;
+            if (file_exists($thumbnailSm)) {
+                unlink($thumbnailSm);
+            }
+        }
+
+        // Hapus foto produk lainnya di tabel foto_produk
+        $fotoProduks = FotoProduk::where('produk_id', $id)->get();
+        foreach ($fotoProduks as $fotoProduk) {
+            $fotoPath = $directory . $fotoProduk->foto;
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+            $fotoProduk->delete();
+        }
+
+        $produk->delete();
+
+        return redirect()->route('backend.produk.index')->with('success', 'Data berhasil dihapus');
     }
+    
 
     // Method untuk menyimpan foto tambahan
     public function storeFoto(Request $request)
