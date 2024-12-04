@@ -302,7 +302,22 @@ class="light-logo" /> -->
                 } 
             }); 
         }); 
-    </script> 
+    </script>
+    <script>
+        // previewFoto
+        function previewFoto() {
+            const foto = document.querySelector('input[name="foto"]');
+            const fotoPreview = document.querySelector('.foto-preview');
+            fotoPreview.style.display = 'block';
+            const fotoReader = new FileReader();
+            fotoReader.readAsDataURL(foto.files[0]);
+            fotoReader.onload = function(fotoEvent) {
+                fotoPreview.src = fotoEvent.target.result;
+                fotoPreview.style.width = '100%';
+            }
+        }
+    </script>
+
 </body> 
 
 </html> 
