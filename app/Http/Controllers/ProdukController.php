@@ -104,7 +104,13 @@ class ProdukController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $produk = Produk::findOrFail($id);
+        $kategori = Kategori::orderBy('nama_kategori', 'asc')->get();
+        return view('backend.v_produk.edit', [
+            'judul' => 'Ubah Produk',
+            'edit' => $produk,
+            'kategori' => $kategori
+        ]);
     }
 
     /**
@@ -112,7 +118,72 @@ class ProdukController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        //ddd($request);
+        $produk = Produk::findOrFail($id);
+        $rules = [
+            'nama_produk' => 'required|max:255|unique:produk,nama_produk,' . $id,
+            'kategori_id' => 'required',
+            'status' => 'required',
+            'detail' => 'required',
+            'harga' => 'required',
+            'berat' => 'required',
+            'stok' => 'required',
+            'foto' => 'image|mimes:jpeg,jpg,png,gif|file|max:1024',
+        ];
+        $messages = [
+            'foto.image' => 'Format gambar gunakan file dengan ekstensi jpeg, jpg, png, atau gif.',
+            'foto.max' => 'Ukuran file gambar Maksimal adalah 1024 KB.'
+        ];
+        $validatedData['user_id'] = auth()->id();
+        $validatedData = $request->validate($rules, $messages);
+
+        if ($request->file('foto')) {
+            //hapus gambar lama
+            if ($produk->foto) {
+                $oldImagePath = public_path('storage/img-produk/') . $produk->foto;
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+                $oldThumbnailLg = public_path('storage/img-produk/') . 'thumb_lg_' . $produk->foto;
+                if (file_exists($oldThumbnailLg)) {
+                    unlink($oldThumbnailLg);
+                }
+                $oldThumbnailMd = public_path('storage/img-produk/') . 'thumb_md_' . $produk->foto;
+                if (file_exists($oldThumbnailMd)) {
+                    unlink($oldThumbnailMd);
+                }
+                $oldThumbnailSm = public_path('storage/img-produk/') . 'thumb_sm_' . $produk->foto;
+                if (file_exists($oldThumbnailSm)) {
+                    unlink($oldThumbnailSm);
+                }
+            }
+            $file = $request->file('foto');
+            $extension = $file->getClientOriginalExtension();
+            $originalFileName = date('YmdHis') . '_' . uniqid() . '.' . $extension;
+            $directory = 'storage/img-produk/';
+
+            // Simpan gambar asli
+            $fileName = ImageHelper::uploadAndResize($file, $directory, $originalFileName);
+            $validatedData['foto'] = $fileName;
+
+            // create thumbnail 1 (lg)
+            $thumbnailLg = 'thumb_lg_' . $originalFileName;
+            ImageHelper::uploadAndResize($file, $directory, $thumbnailLg, 800, null);
+
+            // create thumbnail 2 (md)
+            $thumbnailMd = 'thumb_md_' . $originalFileName;
+            ImageHelper::uploadAndResize($file, $directory, $thumbnailMd, 500, 519);
+
+            // create thumbnail 3 (sm)
+            $thumbnailSm = 'thumb_sm_' . $originalFileName;
+            ImageHelper::uploadAndResize($file, $directory, $thumbnailSm, 100, 110);
+
+            // Simpan nama file asli di database
+            $validatedData['foto'] = $originalFileName;
+        }
+
+        $produk->update($validatedData);
+        return redirect()->route('backend.produk.index')->with('success', 'Data berhasil diperbaharui');
     }
 
     /**
