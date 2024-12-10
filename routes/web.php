@@ -41,6 +41,10 @@ Route::resource('backend/kategori', KategoriController::class, ['as' => 'backend
 // Route untuk Produk
 Route::resource('backend/produk', ProdukController::class, ['as' => 'backend'])->middleware('auth');
 
+// Route untuk laporan produk
+Route::get('backend/laporan/formproduk', [ProdukController::class, 'formProduk'])->name('backend.laporan.formproduk')->middleware('auth');
+Route::post('backend/laporan/cetakproduk', [ProdukController::class, 'cetakProduk'])->name('backend.laporan.cetakproduk')->middleware('auth');
+
 // Route untuk menambahkan foto
 Route::post('foto-produk/store', [ProdukController::class, 'storeFoto'])->name('backend.foto_produk.store')->middleware('auth');
 
