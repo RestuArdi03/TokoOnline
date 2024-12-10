@@ -31,6 +31,10 @@ Route::post('backend/logout', [LoginController::class, 'logoutBackend'])->name('
 // Route::resource('backend/user', UserController::class)->middleware('auth');
 Route::resource('backend/user', UserController::class, ['as' => 'backend'])->middleware('auth');
 
+// Route untuk laporan user
+Route::get('backend/laporan/formuser', [UserController::class, 'formUser'])->name('backend.laporan.formuser')->middleware('auth');
+Route::post('backend/laporan/cetakuser', [UserController::class, 'cetakUser'])->name('backend.laporan.cetakuser')->middleware('auth');
+
 // Route untuk Kategori
 Route::resource('backend/kategori', KategoriController::class, ['as' => 'backend'])->middleware('auth');
 
